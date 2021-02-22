@@ -25,6 +25,7 @@ const (
 
 	AMD64 = "amd64"
 	ARM64 = "arm64"
+        PPCLE = "ppcle"
 	LINUX = "linux"
 
 	DTCapabilities    = "DT_CAPABILITIES"
@@ -162,7 +163,7 @@ func buildKubernetesExpression(archKey string, osKey string) []corev1.NodeSelect
 		{
 			Key:      archKey,
 			Operator: corev1.NodeSelectorOpIn,
-			Values:   []string{AMD64, ARM64},
+			Values:   []string{AMD64, ARM64, PPCLE},
 		},
 		{
 			Key:      osKey,
