@@ -13,11 +13,15 @@ ENV OPERATOR=dynatrace-operator \
     USER_UID=1001 \
     USER_NAME=dynatrace-operator
 
-RUN  microdnf install unzip && microdnf clean all
+RUN  microdnf install unzip util-linux && microdnf clean all
 COPY LICENSE /licenses/
 COPY third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY build/_output/bin /usr/local/bin
 COPY build/bin /usr/local/bin
+
+COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.2.0 /csi-node-driver-registrar /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.3.0 /livenessprobe /usr/local/bin
+
 RUN  /usr/local/bin/user_setup
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]

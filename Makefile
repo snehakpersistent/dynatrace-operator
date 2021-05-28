@@ -12,7 +12,14 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+ifeq ($(origin IMG),undefined)
+ifeq ($(shell git branch --show-current),master)
+IMG=quay.io/dynatrace/dynatrace-operator:snapshot
+else
+IMG=quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s#[^a-zA-Z0-9_-]#-#g")
+endif
+endif
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -34,13 +41,19 @@ test: generate fmt vet manifests
 
 # Build manager binary
 manager: generate fmt vet
-	go build -o bin/manager main.go
+	go build -o bin/manager ./cmd/operator/
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: export RUN_LOCAL=true
 run: export POD_NAMESPACE=dynatrace
 run: generate fmt vet manifests
-	go run ./main.go
+	go run ./cmd/operator/
+
+## Run with delve against the configured Kubernetes cluster in ~/.kube/config
+#run-delve: export RUN_LOCAL=true
+#run-delve: export POD_NAMESPACE=dynatrace
+#run-delve: manager manifests
+#     dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./main
 
 # Install CRDs into a cluster
 install: manifests kustomize
@@ -52,8 +65,23 @@ uninstall: manifests kustomize
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	kubectl get namespace dynatrace || kubectl create namespace dynatrace
+	rm -f config/deploy/kustomization.yaml
+	mkdir -p config/deploy
+	cd config/deploy && $(KUSTOMIZE) create
+	cd config/deploy && $(KUSTOMIZE) edit add base ../kubernetes
+	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
+	$(KUSTOMIZE) build config/deploy | kubectl apply -f -
+
+# Deploy controller in the configured OpenShift cluster in ~/.kube/config
+deploy-ocp: manifests kustomize
+	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
+	rm -f config/deploy/kustomization.yaml
+	mkdir -p config/deploy
+	cd config/deploy && $(KUSTOMIZE) create
+	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift
+	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
+	$(KUSTOMIZE) build config/deploy | oc apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
@@ -116,9 +144,14 @@ endif
 .PHONY: bundle
 bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	cd config/olm/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"="$(IMG)"
+	$(KUSTOMIZE) build config/olm/$(PLATFORM) | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
+	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
+	mkdir -p ./config/olm/$(PLATFORM)/$(VERSION)
+	mv ./bundle/* ./config/olm/$(PLATFORM)/$(VERSION)
+	mv ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.clusterserviceversion.yaml ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
+	mv ./bundle.Dockerfile ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
 
 # Build the bundle image.
 .PHONY: bundle-build

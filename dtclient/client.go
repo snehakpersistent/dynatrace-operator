@@ -3,6 +3,7 @@ package dtclient
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -28,19 +29,8 @@ type Client interface {
 	//  - the agent version is not set or empty
 	GetLatestAgentVersion(os, installerType string) (string, error)
 
-	// GetAgentVersionForIP returns the agent version running on the host with the given IP address.
-	// Returns the version string formatted as "Major.Minor.Revision.Timestamp" on success.
-	//
-	// Returns an error for the following conditions:
-	//  - the IP is empty
-	//  - IO error or unexpected response
-	//  - error response from the server (e.g. authentication failure)
-	//  - a host with the given IP cannot be found
-	//  - the agent version for the host is not set
-	//
-	// The list of all hosts with their IP addresses is cached the first time this method is called. Use a new
-	// client instance to fetch a new list from the server.
-	GetAgentVersionForIP(ip string) (string, error)
+	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
+	GetLatestAgent(os, installerType, flavor, arch string) (io.ReadCloser, error)
 
 	// GetCommunicationHosts returns, on success, the list of communication hosts used for available
 	// communication endpoints that the Dynatrace OneAgent can use to connect to.
@@ -59,21 +49,11 @@ type Client interface {
 	// Returns an error in case the lookup failed.
 	GetEntityIDForIP(ip string) (string, error)
 
-	// GetClusterInfo returns the following information about the cluster:
-	// * Version
-	GetClusterInfo() (*ClusterInfo, error)
-
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(token string) (TokenScopes, error)
 
 	// GetTenantInfo returns TenantInfo that holds UUID, Tenant Token and Endpoints
 	GetTenantInfo() (*TenantInfo, error)
-
-	QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error)
-
-	QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error)
-
-	AddToDashboard(label string, kubernetesApiEndpoint string, bearerToken string) (string, error)
 }
 
 // Known OS values.
@@ -90,16 +70,27 @@ const (
 	InstallerTypeDefault = "default"
 	//Commented for linter, left for further reference
 	//InstallerTypeUnattended = "default-unattended"
-	//InstallerTypePaasZip    = "paas"
+	InstallerTypePaaS = "paas"
 	//InstallerTypePaasSh     = "paas-sh"
 )
 
+// Known flavors.
+const (
+	FlavorDefault = "default"
+	FlavorMUSL    = "musl"
+)
+
+// Known architectures.
+const (
+	ArchX86 = "x86"
+	ArchARM = "arm"
+)
+
 // Known token scopes
-//Commented for linter, left for further reference
-//const (
-//	TokenScopeInstallerDownload = "InstallerDownload"
-//	TokenScopeDataExport        = "DataExport"
-//)
+const (
+	TokenScopeInstallerDownload = "InstallerDownload"
+	TokenScopeDataExport        = "DataExport"
+)
 
 // NewClient creates a REST client for the given API base URL and authentication tokens.
 // Returns an error if a token or the URL is empty.
@@ -186,5 +177,11 @@ func Certs(certs []byte) Option {
 func NetworkZone(networkZone string) Option {
 	return func(c *dynatraceClient) {
 		c.networkZone = networkZone
+	}
+}
+
+func DisableHostsRequests(disabledHostsRequests bool) Option {
+	return func(c *dynatraceClient) {
+		c.disableHostsRequests = disabledHostsRequests
 	}
 }

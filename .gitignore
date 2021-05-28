@@ -80,4 +80,6 @@ tags
 /debug.sh
 /tmp/
 /reapply-all.sh
+config/deploy/kustomization.yaml
 
+/.run/
