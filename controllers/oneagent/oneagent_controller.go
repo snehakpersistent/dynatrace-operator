@@ -35,7 +35,7 @@ const (
 	updateEnvVar                          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
 	ClassicFeature                        = "classic"
 	InframonFeature                       = "inframon"
-	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
+	defaultOneAgentImage                  = "quay.io/snehakpersistent/dynatrace-oneagent-operator:ppc64le"
 	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 )
@@ -332,7 +332,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 								{
 									Key:      "beta.kubernetes.io/arch",
 									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"amd64", "arm64"},
+									Values:   []string{"amd64", "arm64", "ppc64le"},
 								},
 								{
 									Key:      "beta.kubernetes.io/os",
@@ -346,7 +346,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 								{
 									Key:      "kubernetes.io/arch",
 									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"amd64", "arm64"},
+									Values:   []string{"amd64", "arm64", "ppc64le"},
 								},
 								{
 									Key:      "kubernetes.io/os",
@@ -378,7 +378,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 }
 
 func preparePodSpecInstaller(p *corev1.PodSpec, instance *dynatracev1alpha1.DynaKube) error {
-	img := "docker.io/dynatrace/oneagent:latest"
+	img := "quay.io/snehakpersistent/dynatrace-oneagent-operator:ppc64le"
 	envVarImg := os.Getenv("RELATED_IMAGE_DYNATRACE_ONEAGENT")
 
 	if instance.Spec.OneAgent.Image != "" {
