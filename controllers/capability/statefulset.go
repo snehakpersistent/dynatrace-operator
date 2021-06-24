@@ -27,6 +27,7 @@ const (
 
 	amd64 = "amd64"
 	arm64 = "arm64"
+        ppc64le = "ppc64le"
 	linux = "linux"
 
 	AnnotationTemplateHash    = "internal.operator.dynatrace.com/template-hash"
@@ -259,7 +260,7 @@ func buildKubernetesExpression(archKey string, osKey string) []corev1.NodeSelect
 		{
 			Key:      archKey,
 			Operator: corev1.NodeSelectorOpIn,
-			Values:   []string{amd64, arm64},
+			Values:   []string{amd64, arm64, ppc64le},
 		},
 		{
 			Key:      osKey,

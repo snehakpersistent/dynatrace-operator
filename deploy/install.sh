@@ -97,9 +97,9 @@ checkIfNSExists() {
 
 applyDynatraceOperator() {
   if [ "${CLI}" = "kubectl" ]; then
-    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
+    "${CLI}" apply -f ./kubernetes.yaml
   else
-    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
+    "${CLI}" apply -f ./openshift.yaml
   fi
 
   "${CLI}" -n dynatrace create secret generic dynakube --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run -o yaml | "${CLI}" apply -f -
