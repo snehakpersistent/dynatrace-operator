@@ -328,7 +328,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 								{
 									Key:      "beta.kubernetes.io/arch",
 									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"amd64", "arm64"},
+									Values:   []string{"amd64", "arm64", "ppc64le"},
 								},
 								{
 									Key:      "beta.kubernetes.io/os",
@@ -342,7 +342,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 								{
 									Key:      "kubernetes.io/arch",
 									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"amd64", "arm64"},
+									Values:   []string{"amd64", "arm64", "ppc64le"},
 								},
 								{
 									Key:      "kubernetes.io/os",
@@ -506,7 +506,7 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 			reservedEnvVar{
 				Name: "ONEAGENT_INSTALLER_SCRIPT_URL",
 				Default: func(ev *corev1.EnvVar) {
-					ev.Value = fmt.Sprintf("%s/v1/deployment/installer/agent/unix/default/latest?arch=x86&flavor=default", instance.Spec.APIURL)
+					ev.Value = fmt.Sprintf("%s/v1/deployment/installer/agent/unix/default/latest?arch=ppcle&flavor=default", instance.Spec.APIURL)
 				},
 			},
 			reservedEnvVar{

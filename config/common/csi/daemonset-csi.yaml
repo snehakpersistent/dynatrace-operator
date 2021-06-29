@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: driver
-          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          image: quay.io/snehakpersistent/dynatrace-operator:ppc64le-master
           command:
             - csi-driver
           args:
@@ -76,7 +76,7 @@ spec:
               mountPath: /var/lib/kubelet/pods
               mountPropagation: Bidirectional
         - name: registrar
-          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          image: quay.io/snehakpersistent/dynatrace-operator:ppc64le-master
           imagePullPolicy: IfNotPresent
           command:
             - csi-node-driver-registrar
@@ -101,7 +101,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: liveness-probe
-          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          image: quay.io/snehakpersistent/dynatrace-operator:ppc64le-master
           command:
             - livenessprobe
           args:
